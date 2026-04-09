@@ -1,0 +1,74 @@
+name: Sync upstream
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "23 4 * * *"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: sync-upstream
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    env:
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Merge upstream/main
+        id: merge
+        run: |
+          git remote add upstream https://github.com/schpet/linear-cli.git || true
+          git fetch upstream main
+          before="$(git rev-parse HEAD)"
+          git merge --no-edit upstream/main
+          after="$(git rev-parse HEAD)"
+
+          if [ "$before" = "$after" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Push to default branch or open PR
+        if: steps.merge.outputs.changed == 'true'
+        run: |
+          if git push origin HEAD:"$DEFAULT_BRANCH"; then
+            echo "synced upstream directly to $DEFAULT_BRANCH"
+            exit 0
+          fi
+
+          branch="ci/sync-upstream"
+          git push -f origin HEAD:"refs/heads/$branch"
+
+          pr_number="$(gh pr list \
+            --base "$DEFAULT_BRANCH" \
+            --head "$branch" \
+            --state open \
+            --json number \
+            --jq '.[0].number // ""')"
+
+          if [ -z "$pr_number" ]; then
+            gh pr create \
+              --base "$DEFAULT_BRANCH" \
+              --head "$branch" \
+              --title "Sync upstream main" \
+              --body "Automated merge of upstream/main into the fork's default branch."
+          else
+            echo "updated existing PR #$pr_number"
+          fi
