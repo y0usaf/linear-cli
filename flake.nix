@@ -31,7 +31,7 @@
             pname = "linear";
             inherit version;
             src = lib.cleanSource ./.;
-            denoDepsHash = "sha256-jGqice4hH4RW2o7Q4VhwUm8G/EUb98AdJ/Z1jrXMeGE=";
+            denoDepsHash = "sha256-C8xXrLd7h5SX7r8zjW7g5VRaN7mw+1LhE+nWoFfNjiA=";
 
             buildPhase = ''
               runHook preBuild
