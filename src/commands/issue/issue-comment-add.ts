@@ -13,6 +13,10 @@ import {
 import { shouldShowSpinner } from "../../utils/hyperlink.ts"
 import { CliError, handleError, ValidationError } from "../../utils/errors.ts"
 
+// Linear documents CommentCreateInput.id as "The identifier in UUID v4 format".
+const UUID_V4_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+
 export const commentAddCommand = new Command()
   .name("add")
   .description(
@@ -25,6 +29,12 @@ export const commentAddCommand = new Command()
     "Read comment body from a file (preferred for markdown content)",
   )
   .option("-p, --parent <id:string>", "Parent comment ID for replies")
+  // Hidden: a caller-supplied id makes retries idempotent (re-sending the same
+  // id fails rather than posting a duplicate), which is useful to scripts but
+  // noise in the help output.
+  .option("--id <uuid:string>", "Caller-supplied UUID for the new comment", {
+    hidden: true,
+  })
   .option(
     "-a, --attach <filepath:string>",
     "Upload a file and add its Markdown link to the comment (images render inline; repeatable)",
@@ -35,13 +45,29 @@ export const commentAddCommand = new Command()
     "Upload attached images to a public, unauthenticated URL (default: private, workspace-members only)",
   )
   .action(async (options, issueId) => {
-    const { body, bodyFile, parent, attach, public: makePublic } = options
+    const { body, bodyFile, parent, id, attach, public: makePublic } = options
 
     try {
       // Validate that body and bodyFile are not both provided
       if (body && bodyFile) {
         throw new ValidationError(
           "Cannot specify both --body and --body-file",
+        )
+      }
+
+      // Reject a malformed --id here rather than letting the API reject it, so
+      // the user gets an actionable message instead of a raw GraphQL error.
+      // CommentCreateInput.id is documented as "The identifier in UUID v4
+      // format", so check the version and variant nibbles too -- the shared
+      // isLinearUuid() is deliberately lax because it is used to tell UUIDs
+      // apart from names elsewhere, which is a different job.
+      if (id != null && !UUID_V4_REGEX.test(id)) {
+        throw new ValidationError(
+          `Invalid comment ID: ${id}`,
+          {
+            suggestion:
+              "--id must be a v4 UUID, like 123e4567-e89b-42d3-a456-426614174000.",
+          },
         )
       }
 
@@ -166,6 +192,10 @@ export const commentAddCommand = new Command()
       const input: Record<string, unknown> = {
         body: commentBody,
         issueId: resolvedIdentifier,
+      }
+
+      if (id != null) {
+        input.id = id
       }
 
       if (parent) {
