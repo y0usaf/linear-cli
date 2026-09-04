@@ -133,6 +133,8 @@ Options:
   -d, --description       <description>  - Project description (max 255 characters, enforced by Linear's API)          
   -f, --description-file  <path>         - Read project description from file (still subject to the 255-character API  
                                            limit)                                                                      
+  --content               <markdown>     - Project overview markdown                                                   
+  --content-file          <path>         - Read project overview markdown from a file                                  
   -s, --status            <status>       - Status (planned, started, paused, completed, canceled, backlog)             
   -l, --lead              <lead>         - Project lead (username, email, or @me)                                      
   --start-date            <startDate>    - Start date (YYYY-MM-DD)                                                     
@@ -157,5 +159,6 @@ Options:
   -h, --help           - Show this help.                      
   --workspace  <slug>  - Target workspace (uses credentials)  
   -w, --web            - Open in web browser                  
-  -a, --app            - Open in Linear.app
+  -a, --app            - Open in Linear.app                   
+  -j, --json           - Output as JSON
 ```
