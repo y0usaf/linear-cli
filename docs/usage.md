@@ -35,6 +35,10 @@ linear issue list --all-states
 
 # List multiple states
 linear issue list --state unstarted --state started
+
+# A state name or ID works too, and mixes with types
+linear issue list --state "In Review"
+linear issue list --state started --state "In Review"
 ```
 
 filter by assignee:
@@ -56,8 +60,9 @@ linear issue list --all-assignees
 other options:
 
 ```bash
-# List issues for specific team
+# List issues for specific team (key, name, or ID)
 linear issue list --team TEAM
+linear issue list --team "Team Name"
 
 # Sort by priority instead of manual order
 linear issue list --sort priority
@@ -138,7 +143,7 @@ linear issue create --estimate 3
 # Create with labels
 linear issue create --label bug --label frontend
 
-# Create for specific team
+# Create for specific team (key, name, or ID)
 linear issue create --team TEAM
 
 # Create and start working on it
@@ -175,6 +180,21 @@ linear issue update TEAM-123 --remove-label sprint-42 --add-label sprint-43
 linear issue update TEAM-123 --label bug --label frontend
 ```
 
+clear optional fields (each `--clear-*` flag conflicts with its set flag):
+
+```bash
+# Remove the due date, estimate, parent, project, or milestone
+linear issue update TEAM-123 --clear-due-date
+linear issue update TEAM-123 --clear-estimate --clear-parent
+linear issue update TEAM-123 --clear-project --clear-milestone
+
+# Move to another project and detach the milestone in one update
+linear issue update TEAM-123 --project "Mobile App" --clear-milestone
+
+# Assignee and cycle have their own clearing flags
+linear issue update TEAM-123 --unassign --clear-cycle
+```
+
 #### other issue commands
 
 get issue id from current git branch:
@@ -208,7 +228,24 @@ delete an issue:
 linear issue delete TEAM-123
 ```
 
+#### issue comments
+
+```bash
+# List comments (threads, newest first); --json keeps the GraphQL connection
+linear issue comment list TEAM-123
+linear issue comment list TEAM-123 --json
+
+# Add a comment; --body-file is preferred for markdown
+linear issue comment add TEAM-123 --body "Reproduced on staging"
+linear issue comment add TEAM-123 --body-file notes.md
+
+# Reply to a top-level comment (-p / --parent are aliases of --reply-to)
+linear issue comment add TEAM-123 --body "Fixed in #42" --reply-to COMMENT-ID
+```
+
 ### teams
+
+wherever a command takes a team, pass its key, its name, or its UUID. keys are canonical; an unknown team errors and lists the valid keys.
 
 #### list teams
 
@@ -237,6 +274,7 @@ list members of a specific team:
 
 ```bash
 linear team members TEAM
+linear team members "Team Name"
 ```
 
 #### create a team
@@ -276,6 +314,9 @@ linear project update PROJECT-ID --description "Short summary" --content "## Ove
 
 # Replace the overview body from a markdown file
 linear project update PROJECT-ID --content-file overview.md
+
+# Remove the lead, start date, or target date (each conflicts with its set flag)
+linear project update PROJECT-ID --clear-lead --clear-start-date --clear-target-date
 ```
 
 #### list projects
@@ -289,6 +330,31 @@ linear project list
 ```bash
 linear project view PROJECT-ID
 linear project view PROJECT-ID --json
+```
+
+#### project comments
+
+```bash
+# A project is a UUID, slug ID, or exact name
+linear project comment list "Mobile launch"
+linear project comment list PROJECT-ID --json
+
+linear project comment add PROJECT-ID --body "Kickoff is Monday"
+linear project comment add PROJECT-ID --body-file update.md --reply-to COMMENT-ID
+```
+
+### documents and initiatives
+
+Documents and initiatives take the same `comment list` and `comment add` subcommands as issues and projects. A document is a UUID or slug; an initiative is a UUID, slug, or name.
+
+```bash
+linear document comment list DOC-SLUG          # inline comments show the text they quote
+linear document comment list DOC-SLUG --json   # quotedText and parent are in the JSON
+linear document comment add DOC-SLUG --body-file review.md
+linear document comment add DOC-SLUG --body "Agreed" --reply-to COMMENT-ID
+
+linear initiative comment list "Platform"
+linear initiative comment add "Platform" --body "Scope locked for Q3"
 ```
 
 ### shell completions
