@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [3.1.0] - 2026-10-22
+
 ### Added
 
 - `issue create --delegate` and `issue update --delegate` hand an issue to an agent, named by its username, email, name, or ID, and `issue update --clear-delegate` takes it back. `issue view` shows the delegate, and `issue view --json` includes `delegate` ([#296](https://github.com/schpet/linear-cli/issues/296); thanks @christopher-buss)
@@ -11,6 +13,10 @@
 ### Changed
 
 - `comment list` for issues, projects, documents and initiatives marks resolved threads `[resolved]`, and its `--json` output includes `resolvedAt`, `resolvingCommentId` and `resolvingUser` like `issue view --json`, plus `parent.resolvedAt`, the thread state of a reply
+
+### Fixed
+
+- Reject TLS certificate chains using the [compromised eMudhra intermediate CAs](https://emudhra.we-have-a-problem.com/), including chains trusted through the OS store or `SSL_CERT_FILE`, and remove the affected root from the bundled Mozilla roots. New releases also fetch the patched standalone `linear-update` updater
 
 ## [3.0.0] - 2026-10-06
 
@@ -732,7 +738,8 @@ Every `--json` output follows one rule. Lists are a JSON array of entities, with
 - adds a -t, --title flag to the `issue pr` command, allowing you to provide a PR title that is different than linear's issue title
 - allows linear issue identifiers to be passed in as arguments to the issue commands as an alternative to parsing the branch name, e.g. `linear issue show ABC-123`
 
-[Unreleased]: https://github.com/schpet/linear-cli/compare/v3.0.0...HEAD
+[Unreleased]: https://github.com/schpet/linear-cli/compare/v3.1.0...HEAD
+[3.1.0]: https://github.com/schpet/linear-cli/compare/v3.0.0...v3.1.0
 [3.0.0]: https://github.com/schpet/linear-cli/compare/v2.6.0...v3.0.0
 [2.6.0]: https://github.com/schpet/linear-cli/compare/v2.5.0...v2.6.0
 [2.5.0]: https://github.com/schpet/linear-cli/compare/v2.4.0...v2.5.0
